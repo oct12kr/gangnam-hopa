@@ -1,9 +1,11 @@
 "use client";
 
+import { FileText } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { fetchPosts } from "@/lib/wordpress-client";
+import type { BlogPost as WordPressBlogPost } from "@/types/wordpress";
 import ScrollReveal from "@/components/ui/ScrollReveal";
-import { loungeImage } from "./content";
 
 type BlogPost = {
   id: number;
@@ -15,39 +17,27 @@ type BlogPost = {
 };
 
 type BlogResponse = {
-  status: "ok" | "fallback";
+  status: "ok" | "error";
   posts: BlogPost[];
   source?: string;
 };
 
-const clientFallbackPosts: BlogPost[] = [
-  {
-    id: 9001,
-    title: "365일 예약 문의 안내",
-    date: "2026-07-18",
-    link: "/#reservation",
-    category: "운영 안내",
-    image: loungeImage,
-  },
-  {
-    id: 9002,
-    title: "프리미엄 룸 이용 가이드",
-    date: "2026-07-18",
-    link: "/#system",
-    category: "공지사항",
-    image: loungeImage,
-  },
-  {
-    id: 9003,
-    title: "방문 전 예약 상담 안내",
-    date: "2026-07-18",
-    link: "/#reservation",
-    category: "예약",
-    image: loungeImage,
-  },
-];
+function toPreviewPost(post: WordPressBlogPost): BlogPost {
+  return {
+    id: post.id,
+    title: post.title,
+    date: post.date,
+    link: `/blog/${post.slug}`,
+    category: post.category.name,
+    image: post.thumbnail,
+  };
+}
 
 function formatDate(value: string) {
+  if (/^\d{4}\.\d{2}\.\d{2}$/.test(value)) {
+    return value;
+  }
+
   return new Intl.DateTimeFormat("ko-KR", {
     year: "numeric",
     month: "2-digit",
@@ -65,20 +55,14 @@ function useBlogPosts(limit: number) {
     async function loadPosts() {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/posts?limit=${limit}`, {
-          signal: controller.signal,
-          headers: { Accept: "application/json" },
+        const payload = await fetchPosts({ perPage: limit });
+        setData({
+          status: payload.error ? "error" : "ok",
+          posts: payload.posts.map(toPreviewPost),
         });
-
-        if (!response.ok) {
-          throw new Error("Blog API request failed");
-        }
-
-        const payload = (await response.json()) as BlogResponse;
-        setData(payload);
       } catch {
         if (!controller.signal.aborted) {
-          setData({ status: "fallback", posts: clientFallbackPosts.slice(0, limit) });
+          setData({ status: "error", posts: [] });
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -111,11 +95,17 @@ function BlogSkeleton({ count }: { count: number }) {
 
 function BlogCards({ posts }: { posts: BlogPost[] }) {
   return (
-    <div className="blog-grid">
+    <div className={`blog-grid blog-grid-count-${Math.min(posts.length, 3)}`}>
       {posts.map((post) => (
         <a className="glass-card blog-card" href={post.link} key={post.id}>
           <div className="blog-image-wrap">
-            <Image src={post.image} alt="" fill sizes="(min-width: 900px) 33vw, 100vw" />
+            {post.image.startsWith("/") || post.image.startsWith("http") ? (
+              <Image src={post.image} alt="" fill sizes="(min-width: 900px) 33vw, 100vw" />
+            ) : (
+              <div className="blog-thumb-placeholder" aria-hidden="true">
+                <span>NEWS</span>
+              </div>
+            )}
           </div>
           <div className="blog-card-body">
             <span>{post.category}</span>
@@ -124,6 +114,16 @@ function BlogCards({ posts }: { posts: BlogPost[] }) {
           </div>
         </a>
       ))}
+    </div>
+  );
+}
+
+function BlogEmptyState({ isError = false }: { isError?: boolean }) {
+  return (
+    <div className="blog-empty-state compact">
+      <FileText size={30} strokeWidth={1.5} aria-hidden="true" />
+      <h3>{isError ? "게시글을 불러오는 중 문제가 발생했습니다." : "아직 등록된 게시글이 없습니다."}</h3>
+      <p>{isError ? "잠시 후 다시 시도해주세요." : "발행된 글이 생기면 이곳에 자동으로 표시됩니다."}</p>
     </div>
   );
 }
@@ -140,11 +140,7 @@ export function BlogPreview() {
         <p>운영 안내 / 이벤트 / 공지사항 / 방문 후기</p>
       </div>
 
-      {isLoading ? <BlogSkeleton count={3} /> : <BlogCards posts={posts} />}
-
-      {data?.status === "fallback" && !isLoading ? (
-        <p className="blog-status">WordPress API 연결 전까지 기본 안내를 표시 중입니다.</p>
-      ) : null}
+      {isLoading ? <BlogSkeleton count={3} /> : posts.length > 0 ? <BlogCards posts={posts} /> : <BlogEmptyState isError={data?.status === "error"} />}
 
       <a className="text-link more-link" href="/blog">
         더보기 -&gt;
@@ -165,11 +161,7 @@ export function BlogArchive() {
         <p>운영 안내와 공지사항을 한곳에서 확인하세요.</p>
       </div>
 
-      {isLoading ? <BlogSkeleton count={6} /> : <BlogCards posts={posts} />}
-
-      {data?.status === "fallback" && !isLoading ? (
-        <p className="blog-status archive-status">WordPress API 연결 전까지 기본 안내를 표시 중입니다.</p>
-      ) : null}
+      {isLoading ? <BlogSkeleton count={6} /> : posts.length > 0 ? <BlogCards posts={posts} /> : <BlogEmptyState isError={data?.status === "error"} />}
     </main>
   );
 }

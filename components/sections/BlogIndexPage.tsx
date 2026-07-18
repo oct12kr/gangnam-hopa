@@ -1,20 +1,17 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, LayoutGrid, List } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, LayoutGrid, List } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { categories, mockGetPosts, mockPosts } from "@/lib/mock-posts";
-import { getPosts } from "@/lib/wordpress";
-import type { BlogPost } from "@/types/wordpress";
+import { fetchCategories, fetchPosts } from "@/lib/wordpress-client";
+import type { BlogPost, Category } from "@/types/wordpress";
 
 type SortOrder = "newest" | "oldest";
 type ViewMode = "grid" | "list";
 
 const perPage = 12;
-const initialCategory = categories[0]?.slug ?? "";
-const initialPostResult = mockGetPosts({ page: 1, perPage, category: initialCategory });
 
 function dateNumber(date: string) {
   return Number(date.replace(/\./g, ""));
@@ -55,26 +52,63 @@ function BlogThumbnail({ post, size = "large" }: { post: BlogPost; size?: "large
 }
 
 export default function BlogIndexPage() {
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [posts, setPosts] = useState<BlogPost[]>(initialPostResult.posts);
-  const [total, setTotal] = useState(initialPostResult.total);
-  const [totalPages, setTotalPages] = useState(initialPostResult.totalPages);
+  const [categoryList, setCategoryList] = useState<Category[]>([]);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [recentPosts, setRecentPosts] = useState<BlogPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    getPosts({ page: currentPage, perPage, category: selectedCategory }).then((result) => {
+    fetchCategories().then((result) => {
+      if (!isMounted) {
+        return;
+      }
+
+      if (result.categories.length > 0) {
+        setCategoryList(result.categories);
+        setSelectedCategory((current) =>
+          result.categories.some((category) => category.slug === current) ? current : result.categories[0]?.slug || "",
+        );
+      }
+    });
+
+    fetchPosts({ page: 1, perPage: 3 }).then((result) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setRecentPosts(result.posts);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+
+    fetchPosts({ page: currentPage, perPage, category: selectedCategory }).then((result) => {
       if (!isMounted) {
         return;
       }
 
       setPosts(result.posts);
       setTotal(result.total);
-      setTotalPages(result.totalPages);
+      setTotalPages(Math.max(0, result.totalPages));
+      setHasError(Boolean(result.error));
+
+      setIsLoading(false);
     });
 
     return () => {
@@ -82,9 +116,8 @@ export default function BlogIndexPage() {
     };
   }, [currentPage, selectedCategory]);
 
-  const selectedCategoryData = categories.find((category) => category.slug === selectedCategory) ?? categories[0];
+  const selectedCategoryData = categoryList.find((category) => category.slug === selectedCategory) ?? categoryList[0] ?? null;
   const sortedPosts = useMemo(() => sortPosts(posts, sortOrder), [posts, sortOrder]);
-  const recentPosts = useMemo(() => sortPosts(mockPosts, "newest").slice(0, 3), []);
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   const selectCategory = (slug: string) => {
@@ -125,7 +158,7 @@ export default function BlogIndexPage() {
             <div className="sidebar-box">
               <h2>CATEGORY</h2>
               <div className="blog-category-list">
-                {categories.map((category) => (
+                {categoryList.map((category) => (
                   <button
                     className={category.slug === selectedCategory ? "blog-category-item is-active" : "blog-category-item"}
                     type="button"
@@ -136,15 +169,18 @@ export default function BlogIndexPage() {
                     <em>({category.count})</em>
                   </button>
                 ))}
+                {categoryList.length === 0 ? <p className="blog-empty-small">표시할 카테고리가 없습니다.</p> : null}
               </div>
 
-              <div className="blog-category-summary">
-                <span>⊙ 현재 선택된 카테고리</span>
-                <strong>
-                  {selectedCategoryData.name} ({selectedCategoryData.slug})
-                </strong>
-                <p>총 {selectedCategoryData.count}개의 글이 있습니다.</p>
-              </div>
+              {selectedCategoryData ? (
+                <div className="blog-category-summary">
+                  <span>⊙ 현재 선택된 카테고리</span>
+                  <strong>
+                    {selectedCategoryData.name} ({selectedCategoryData.slug})
+                  </strong>
+                  <p>총 {selectedCategoryData.count}개의 글이 있습니다.</p>
+                </div>
+              ) : null}
             </div>
 
             <div className="sidebar-box">
@@ -159,6 +195,7 @@ export default function BlogIndexPage() {
                     </span>
                   </Link>
                 ))}
+                {recentPosts.length === 0 ? <p className="blog-empty-small">최근 글이 없습니다.</p> : null}
               </div>
             </div>
           </aside>
@@ -192,29 +229,49 @@ export default function BlogIndexPage() {
               </div>
             </div>
 
-            <div className={viewMode === "grid" ? "blog-post-grid" : "blog-post-list"}>
-              {sortedPosts.map((post) => (
-                <Link className="blog-post-card" href={`/blog/${post.slug}`} key={`${currentPage}-${post.id}`}>
-                  <BlogThumbnail post={post} />
-                  <div className="blog-post-body">
-                    <h2>{post.title}</h2>
-                    {viewMode === "list" ? <p>{post.excerpt}</p> : null}
-                    <time dateTime={post.date}>{post.date}</time>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            {isLoading ? (
+              <div className={viewMode === "grid" ? "blog-post-grid" : "blog-post-list"}>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <article className="blog-post-card blog-post-skeleton" key={`skeleton-${index}`}>
+                    <div className="skeleton-image" />
+                    <div className="skeleton-line short" />
+                    <div className="skeleton-line" />
+                    <div className="skeleton-line tiny" />
+                  </article>
+                ))}
+              </div>
+            ) : sortedPosts.length > 0 ? (
+              <div className={viewMode === "grid" ? "blog-post-grid" : "blog-post-list"}>
+                {sortedPosts.map((post) => (
+                  <Link className="blog-post-card" href={`/blog/${post.slug}`} key={`${currentPage}-${post.id}`}>
+                    <BlogThumbnail post={post} />
+                    <div className="blog-post-body">
+                      <h2>{post.title}</h2>
+                      {viewMode === "list" ? <p>{post.excerpt}</p> : null}
+                      <time dateTime={post.date}>{post.date}</time>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="blog-empty-state">
+                <FileText size={34} strokeWidth={1.5} aria-hidden="true" />
+                <h2>{hasError ? "게시글을 불러오는 중 문제가 발생했습니다." : "아직 등록된 게시글이 없습니다."}</h2>
+                <p>{hasError ? "잠시 후 다시 시도해주세요." : "발행된 글이 생기면 이곳에 자동으로 표시됩니다."}</p>
+              </div>
+            )}
 
-            <nav className="blog-pagination" aria-label="블로그 페이지네이션">
-              <button
-                type="button"
-                aria-label="이전 페이지"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              >
-                <ChevronLeft size={18} strokeWidth={1.8} />
-              </button>
-              {pageNumbers.map((page) => (
+            {totalPages > 1 ? (
+              <nav className="blog-pagination" aria-label="블로그 페이지네이션">
+                <button
+                  type="button"
+                  aria-label="이전 페이지"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                >
+                  <ChevronLeft size={18} strokeWidth={1.8} />
+                </button>
+                {pageNumbers.map((page) => (
                 <button
                   className={page === currentPage ? "is-active" : ""}
                   type="button"
@@ -225,16 +282,17 @@ export default function BlogIndexPage() {
                 >
                   {page}
                 </button>
-              ))}
-              <button
-                type="button"
-                aria-label="다음 페이지"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-              >
-                <ChevronRight size={18} strokeWidth={1.8} />
-              </button>
-            </nav>
+                ))}
+                <button
+                  type="button"
+                  aria-label="다음 페이지"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                >
+                  <ChevronRight size={18} strokeWidth={1.8} />
+                </button>
+              </nav>
+            ) : null}
           </div>
         </div>
       </section>
