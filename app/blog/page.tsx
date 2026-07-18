@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { BlogArchive } from "@/components/sections/BlogSection";
+import BlogIndexPage from "@/components/sections/BlogIndexPage";
+import Footer from "@/components/sections/Footer";
 import SiteHeader from "@/components/ui/SiteHeader";
 
 export const metadata: Metadata = {
@@ -11,7 +12,8 @@ export default function BlogPage() {
   return (
     <>
       <SiteHeader mode="blog" />
-      <BlogArchive />
+      <BlogIndexPage />
+      <Footer />
     </>
   );
 }

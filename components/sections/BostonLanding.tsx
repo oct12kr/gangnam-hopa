@@ -1,7 +1,6 @@
 import SiteHeader from "@/components/ui/SiteHeader";
 import RevealController from "@/components/ui/RevealController";
 import AboutSection from "./AboutSection";
-import { BlogPreview } from "./BlogSection";
 import Footer from "./Footer";
 import GallerySection from "./GallerySection";
 import HeroSection from "./HeroSection";
@@ -23,7 +22,6 @@ export default function BostonLanding() {
         <GallerySection />
         <LocationSection />
         <ReservationSection />
-        <BlogPreview />
       </main>
       <Footer />
     </>

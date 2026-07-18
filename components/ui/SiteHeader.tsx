@@ -28,7 +28,7 @@ export default function SiteHeader({ mode = "home" }: SiteHeaderProps) {
   const getHref = (id: string) => (mode === "home" ? `#${id}` : `/#${id}`);
 
   return (
-    <header className={`site-header ${isScrolled ? "is-scrolled" : ""}`}>
+    <header className={`site-header ${isScrolled ? "is-scrolled" : ""} ${mode === "blog" ? "is-blog-mode" : ""}`.trim()}>
       <a className="brand-mark" href={mode === "home" ? "#home" : "/#home"} aria-label="BOSTON Home">
         <span>BOSTON</span>
         <small>GANGNAM</small>
@@ -40,7 +40,9 @@ export default function SiteHeader({ mode = "home" }: SiteHeaderProps) {
             {item.label}
           </a>
         ))}
-        <a href="/blog">Blog</a>
+        <a className={mode === "blog" ? "is-active" : ""} href="/blog">
+          Blog
+        </a>
       </nav>
 
       <a className="header-call" href="tel:010-8288-8854">
@@ -65,7 +67,7 @@ export default function SiteHeader({ mode = "home" }: SiteHeaderProps) {
               {item.label}
             </a>
           ))}
-          <a href="/blog" onClick={() => setIsOpen(false)}>
+          <a className={mode === "blog" ? "is-active" : ""} href="/blog" onClick={() => setIsOpen(false)}>
             Blog
           </a>
           <a className="drawer-call" href="tel:010-8288-8854" onClick={() => setIsOpen(false)}>
