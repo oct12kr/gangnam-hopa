@@ -19,6 +19,7 @@ type FetchWordPressResult<T> = {
 const WP_API_URL_KEYS = ["WP_API_URL", "WP_URL"];
 const WP_USERNAME_KEYS = ["WP_APP_USERNAME", "WORDPRESS_USERNAME", "WP_USERNAME"];
 const WP_PASSWORD_KEYS = ["WP_APP_PASSWORD", "WORDPRESS_APPLICATION_PASSWORD"];
+const MAX_ERROR_BODY_LOG_LENGTH = 2000;
 
 function getFirstEnv(keys: string[]) {
   const key = keys.find((name) => Boolean(process.env[name]));
@@ -41,6 +42,7 @@ export function getWordPressConfig() {
   ].filter(Boolean) as string[];
 
   if (missingKeys.length > 0 || !apiUrl?.value || !username?.value || !password?.value) {
+    console.error("[WP API] 환경변수 누락:", missingKeys.join(", "));
     throw new WordPressConfigError(missingKeys);
   }
 
@@ -73,15 +75,27 @@ export async function fetchWordPressJson<T>(
     }
   });
 
-  const response = await fetch(url.toString(), {
-    cache: "no-store",
-    headers: {
-      Accept: "application/json",
-      Authorization: getAuthHeader(),
-    },
-  });
+  console.log("[WP API] 요청 URL:", url.toString());
+
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        Authorization: getAuthHeader(),
+      },
+    });
+  } catch (error) {
+    console.error("[WP API] fetch 자체 실패:", error);
+    throw error;
+  }
+
+  console.log("[WP API] 응답 상태:", response.status, response.statusText);
 
   if (!response.ok) {
+    const errorBody = await response.text();
+    console.error("[WP API] 에러 응답 본문:", errorBody.slice(0, MAX_ERROR_BODY_LOG_LENGTH));
     throw new Error(`WordPress API responded with ${response.status}`);
   }
 
