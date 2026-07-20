@@ -33,6 +33,11 @@ type WordPressPublicTerm = {
 
 type WordPressPublicMedia = {
   source_url?: string;
+  alt_text?: string;
+};
+
+type WordPressPublicAuthor = {
+  name?: string;
 };
 
 type WordPressPublicPost = {
@@ -44,6 +49,7 @@ type WordPressPublicPost = {
   excerpt?: WordPressRendered;
   content?: WordPressRendered;
   _embedded?: {
+    author?: WordPressPublicAuthor[];
     "wp:featuredmedia"?: WordPressPublicMedia[];
     "wp:term"?: WordPressPublicTerm[][];
   };
@@ -244,6 +250,8 @@ export async function getBlogPostBySlug(slug: string) {
     date: post.date ?? null,
     modified: post.modified ?? null,
     thumbnail: post._embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null,
+    thumbnailAlt: textFromHtml(post._embedded?.["wp:featuredmedia"]?.[0]?.alt_text),
+    author: textFromHtml(post._embedded?.author?.[0]?.name) || "강남보스턴",
     categories,
   };
 }

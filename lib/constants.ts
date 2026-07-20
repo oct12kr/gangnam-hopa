@@ -1,0 +1,14 @@
+export const siteUrl = "https://www.gangnamhopa.com";
+export const businessName = "강남보스턴 BOSTON";
+export const venueName = "BOSTON";
+export const area = "강남구 삼성동";
+export const addressLocality = "서울특별시 강남구";
+export const addressRegion = "서울특별시";
+export const detailAddress = "삼성동 143-27";
+export const roadAddress = "서울특별시 강남구 테헤란로77길 9";
+export const fullAddress = "서울특별시 강남구 삼성동 143-27";
+export const phoneDisplay = "010-8288-8854";
+export const phoneHref = "tel:01082888854";
+export const latitude = 37.507081;
+export const longitude = 127.054385;
+export const managerName = "강남보스턴 상담실장";

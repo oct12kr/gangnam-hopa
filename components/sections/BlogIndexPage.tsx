@@ -96,20 +96,22 @@ export default function BlogIndexPage() {
 
   useEffect(() => {
     let isMounted = true;
-    setIsLoading(true);
 
-    fetchPosts({ page: currentPage, perPage, category: selectedCategory }).then((result) => {
-      if (!isMounted) {
-        return;
+    async function loadPosts() {
+      setIsLoading(true);
+      const result = await fetchPosts({ page: currentPage, perPage, category: selectedCategory });
+
+      if (isMounted) {
+        setPosts(result.posts);
+        setTotal(result.total);
+        setTotalPages(Math.max(0, result.totalPages));
+        setHasError(Boolean(result.error));
+
+        setIsLoading(false);
       }
+    }
 
-      setPosts(result.posts);
-      setTotal(result.total);
-      setTotalPages(Math.max(0, result.totalPages));
-      setHasError(Boolean(result.error));
-
-      setIsLoading(false);
-    });
+    void loadPosts();
 
     return () => {
       isMounted = false;

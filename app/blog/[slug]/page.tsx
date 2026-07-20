@@ -4,7 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Footer from "@/components/sections/Footer";
 import SiteHeader from "@/components/ui/SiteHeader";
-import { absoluteAssetUrl, canonicalUrl } from "@/lib/seo";
+import { businessName, siteUrl } from "@/lib/constants";
+import { absoluteAssetUrl, buildMetaDescription, buildMetaTitle, canonicalUrl, defaultSeo } from "@/lib/seo";
 import { getBlogPostBySlug } from "@/lib/wordpress-server";
 
 export const dynamic = "force-dynamic";
@@ -36,9 +37,13 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   const slug = decodeURIComponent(rawSlug);
   const post = await findPost(slug);
   const pageUrl = canonicalUrl(`/blog/${post?.slug ?? slug}`);
-  const title = post ? `${post.title} | BOSTON Blog` : "BOSTON Blog";
-  const description = post?.excerpt || "강남보스턴 블로그 글입니다.";
-  const imageUrl = absoluteAssetUrl(post?.thumbnail ?? "/og.png");
+  const title = buildMetaTitle(post?.title ?? "강남보스턴 블로그 글");
+  const description = buildMetaDescription({
+    description: post?.excerpt,
+    content: post?.content,
+    fallback: post ? `${post.title} 본문을 확인해 보세요.` : defaultSeo.fallbackDescription,
+  });
+  const imageUrl = absoluteAssetUrl(post?.thumbnail, defaultSeo.blogImage);
 
   return {
     title,
@@ -48,10 +53,21 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     },
     openGraph: {
       type: "article",
+      locale: defaultSeo.locale,
       url: pageUrl,
+      siteName: defaultSeo.siteName,
       title,
       description,
-      images: [imageUrl],
+      publishedTime: post?.date ?? undefined,
+      modifiedTime: post?.modified ?? undefined,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: post?.thumbnailAlt || post?.title || `${businessName} 블로그 대표 이미지`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -72,9 +88,71 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   const formattedDate = formatDate(post.date);
+  const pageUrl = canonicalUrl(`/blog/${post.slug}`);
+  const pageDescription = buildMetaDescription({
+    description: post.excerpt,
+    content: post.content,
+    fallback: `${post.title} 본문을 확인해 보세요.`,
+  });
+  const imageUrl = absoluteAssetUrl(post.thumbnail, defaultSeo.blogImage);
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "@id": `${pageUrl}#blogposting`,
+    url: pageUrl,
+    headline: post.title,
+    description: pageDescription,
+    datePublished: post.date ?? post.modified ?? undefined,
+    dateModified: post.modified ?? post.date ?? undefined,
+    author: {
+      "@type": "Person",
+      name: post.author || businessName,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: businessName,
+      url: siteUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteAssetUrl("/favicon.svg"),
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": pageUrl,
+    },
+    image: [imageUrl],
+    inLanguage: "ko-KR",
+  };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: businessName,
+        item: canonicalUrl("/"),
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "블로그",
+        item: canonicalUrl("/blog"),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: post.title,
+        item: pageUrl,
+      },
+    ],
+  };
 
   return (
     <>
+      <JsonLd data={articleSchema} />
+      <JsonLd data={breadcrumbSchema} />
       <SiteHeader mode="blog" />
       <main className="blog-detail-page">
         <article className="blog-detail-shell">
@@ -105,4 +183,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       <Footer />
     </>
   );
+}
+
+function JsonLd({ data }: { data: Record<string, unknown> }) {
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
 }

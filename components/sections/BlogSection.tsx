@@ -2,6 +2,7 @@
 
 import { FileText } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchPosts } from "@/lib/wordpress-client";
 import type { BlogPost as WordPressBlogPost } from "@/types/wordpress";
@@ -97,7 +98,7 @@ function BlogCards({ posts }: { posts: BlogPost[] }) {
   return (
     <div className={`blog-grid blog-grid-count-${Math.min(posts.length, 3)}`}>
       {posts.map((post) => (
-        <a className="glass-card blog-card" href={post.link} key={post.id}>
+        <Link className="glass-card blog-card" href={post.link} key={post.id}>
           <div className="blog-image-wrap">
             {post.image.startsWith("/") || post.image.startsWith("http") ? (
               <Image src={post.image} alt="" fill sizes="(min-width: 900px) 33vw, 100vw" />
@@ -112,7 +113,7 @@ function BlogCards({ posts }: { posts: BlogPost[] }) {
             <h3>{post.title}</h3>
             <time dateTime={post.date}>{formatDate(post.date)}</time>
           </div>
-        </a>
+        </Link>
       ))}
     </div>
   );
@@ -142,9 +143,9 @@ export function BlogPreview() {
 
       {isLoading ? <BlogSkeleton count={3} /> : posts.length > 0 ? <BlogCards posts={posts} /> : <BlogEmptyState isError={data?.status === "error"} />}
 
-      <a className="text-link more-link" href="/blog">
+      <Link className="text-link more-link" href="/blog">
         더보기 -&gt;
-      </a>
+      </Link>
     </ScrollReveal>
   );
 }

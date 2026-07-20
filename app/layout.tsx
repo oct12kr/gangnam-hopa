@@ -1,5 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { businessName, siteUrl } from "@/lib/constants";
+import { absoluteAssetUrl, buildMetaDescription, buildMetaTitle, canonicalUrl, defaultSeo } from "@/lib/seo";
 import "./globals.css";
 
 const notoSansKr = localFont({
@@ -9,26 +11,76 @@ const notoSansKr = localFont({
   display: "swap",
 });
 
+const fallbackTitle = buildMetaTitle(defaultSeo.fallbackTitle);
+const fallbackDescription = buildMetaDescription({
+  description: defaultSeo.fallbackDescription,
+});
+const defaultOgImage = absoluteAssetUrl(defaultSeo.defaultImage);
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://gangnam-boston.local"),
-  title: "강남보스턴 BOSTON | 강남 프리미엄 퍼블릭",
-  description: "강남보스턴 BOSTON 프리미엄 랜딩페이지. 예약 문의 010-8288-8854, 서울특별시 강남구 삼성동 143-27.",
+  metadataBase: new URL(siteUrl),
+  title: fallbackTitle,
+  description: fallbackDescription,
+  keywords: [
+    "강남호빠",
+    "강남 호빠",
+    "강남보스턴",
+    "강남보스턴 BOSTON",
+    "강남 프리미엄 라운지",
+    "삼성동 호빠",
+    "강남호빠 예약",
+  ],
+  alternates: {
+    canonical: canonicalUrl("/"),
+  },
+  applicationName: businessName,
+  authors: [{ name: businessName, url: siteUrl }],
+  creator: businessName,
+  publisher: businessName,
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
   },
   openGraph: {
-    title: "강남보스턴 BOSTON",
-    description: "강남 프리미엄 퍼블릭, 품격있는 서비스와 최고의 시간을 경험하십시오.",
-    images: ["/og.png"],
     type: "website",
+    locale: defaultSeo.locale,
+    url: canonicalUrl("/"),
+    siteName: defaultSeo.siteName,
+    title: fallbackTitle,
+    description: fallbackDescription,
+    images: [
+      {
+        url: defaultOgImage,
+        width: 1200,
+        height: 630,
+        alt: `${businessName} 대표 이미지`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "강남보스턴 BOSTON",
-    description: "예약문의 010-8288-8854",
-    images: ["/og.png"],
+    title: fallbackTitle,
+    description: fallbackDescription,
+    images: [defaultOgImage],
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#0b0b0b",
 };
 
 export default function RootLayout({

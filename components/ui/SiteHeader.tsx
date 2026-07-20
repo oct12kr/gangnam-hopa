@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { navItems } from "@/components/sections/content";
 
@@ -29,20 +30,20 @@ export default function SiteHeader({ mode = "home" }: SiteHeaderProps) {
 
   return (
     <header className={`site-header ${isScrolled ? "is-scrolled" : ""} ${mode === "blog" ? "is-blog-mode" : ""}`.trim()}>
-      <a className="brand-mark" href={mode === "home" ? "#home" : "/#home"} aria-label="BOSTON Home">
+      <Link className="brand-mark" href={mode === "home" ? "#home" : "/#home"} aria-label="BOSTON Home">
         <span>BOSTON</span>
         <small>GANGNAM</small>
-      </a>
+      </Link>
 
       <nav className="desktop-nav" aria-label="Primary navigation">
         {navItems.map((item) => (
-          <a key={item.id} href={getHref(item.id)}>
+          <Link key={item.id} href={getHref(item.id)}>
             {item.label}
-          </a>
+          </Link>
         ))}
-        <a className={mode === "blog" ? "is-active" : ""} href="/blog">
+        <Link className={mode === "blog" ? "is-active" : ""} href="/blog">
           Blog
-        </a>
+        </Link>
       </nav>
 
       <a className="header-call" href="tel:010-8288-8854">
@@ -63,13 +64,13 @@ export default function SiteHeader({ mode = "home" }: SiteHeaderProps) {
       <div className={`mobile-drawer ${isOpen ? "is-open" : ""}`} aria-hidden={!isOpen}>
         <nav aria-label="Mobile navigation">
           {navItems.map((item) => (
-            <a key={item.id} href={getHref(item.id)} onClick={() => setIsOpen(false)}>
+            <Link key={item.id} href={getHref(item.id)} onClick={() => setIsOpen(false)}>
               {item.label}
-            </a>
+            </Link>
           ))}
-          <a className={mode === "blog" ? "is-active" : ""} href="/blog" onClick={() => setIsOpen(false)}>
+          <Link className={mode === "blog" ? "is-active" : ""} href="/blog" onClick={() => setIsOpen(false)}>
             Blog
-          </a>
+          </Link>
           <a className="drawer-call" href="tel:010-8288-8854" onClick={() => setIsOpen(false)}>
             전화예약 010-8288-8854
           </a>
