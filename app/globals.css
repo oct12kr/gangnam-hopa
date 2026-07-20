@@ -2180,6 +2180,131 @@ img {
   opacity: 0.3;
 }
 
+.blog-detail-page {
+  min-height: 100vh;
+  padding: 128px clamp(18px, 5vw, 72px) 96px;
+  background:
+    radial-gradient(circle at 50% 0, rgba(212, 175, 55, 0.14), transparent 34rem),
+    #f6f1e8;
+  color: #2b2b2b;
+}
+
+.blog-detail-shell {
+  width: min(100%, 960px);
+  margin: 0 auto;
+}
+
+.blog-detail-back {
+  display: inline-flex;
+  margin-bottom: 28px;
+  color: #b8912c;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.blog-detail-header {
+  display: grid;
+  gap: 18px;
+  padding-bottom: 34px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.24);
+}
+
+.blog-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.blog-detail-meta time,
+.blog-detail-meta span {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  border-radius: 4px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.58);
+  color: #7c663b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.blog-detail-header h1 {
+  margin: 0;
+  color: #2b2b2b;
+  font-size: clamp(32px, 5vw, 54px);
+  font-weight: 800;
+  line-height: 1.18;
+}
+
+.blog-detail-header p {
+  max-width: 760px;
+  margin: 0;
+  color: #6a6258;
+  font-size: clamp(17px, 2vw, 20px);
+  line-height: 1.8;
+}
+
+.blog-detail-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-top: 36px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e8e4dc;
+}
+
+.blog-detail-image img {
+  object-fit: cover;
+}
+
+.blog-detail-content {
+  margin-top: 40px;
+  padding: clamp(24px, 4vw, 44px);
+  border: 1px solid rgba(212, 175, 55, 0.16);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #34302a;
+  font-size: 17px;
+  line-height: 1.9;
+}
+
+.blog-detail-content > *:first-child {
+  margin-top: 0;
+}
+
+.blog-detail-content > *:last-child {
+  margin-bottom: 0;
+}
+
+.blog-detail-content h2,
+.blog-detail-content h3 {
+  margin: 2em 0 0.7em;
+  color: #2b2b2b;
+  line-height: 1.35;
+}
+
+.blog-detail-content p {
+  margin: 0 0 1.25em;
+}
+
+.blog-detail-content a {
+  color: #9a7430;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.blog-detail-content img {
+  height: auto;
+  margin: 1.5em 0;
+  border-radius: 4px;
+}
+
 .site-footer {
   display: grid;
   grid-template-columns: 1.1fr 1fr auto;
